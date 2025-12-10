@@ -151,7 +151,7 @@ export default function CalendarView({
 
                     let bgColor = "bg-background";
                     let borderColor = "border-border";
-                    let textColor = "text-foreground";
+                    const textColor = "text-foreground";
 
                     if (isWeekend) {
                         bgColor = "bg-muted/30";
