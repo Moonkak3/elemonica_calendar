@@ -9,6 +9,9 @@ import {
     isSameDay,
     addMonths,
     subMonths,
+    startOfWeek,
+    endOfWeek,
+    isSameDay as dateFnsIsSameDay,
 } from "date-fns";
 import {
     ChevronLeft,
@@ -44,7 +47,14 @@ export default function CalendarView({
     const currentMonth = selectedDate || new Date();
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+    // Get the start of the calendar view (Sunday of the week containing month start)
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // 0 = Sunday
+    // Get the end of the calendar view (Saturday of the week containing month end)
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 }); // 0 = Saturday
+
+    // Get all days in the calendar view (including padding days from previous/next months)
+    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
     const getDayData = (date: Date) => {
         const dateStr = format(date, "yyyy-MM-dd");
@@ -74,10 +84,15 @@ export default function CalendarView({
         onDateSelect(newDate);
     };
 
+    // Check if a day is in the current month (for styling)
+    const isCurrentMonth = (day: Date) => {
+        return isSameMonth(day, currentMonth);
+    };
+
     return (
         <div className="space-y-6">
             {/* Calendar Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mx-4">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="outline"
@@ -139,7 +154,7 @@ export default function CalendarView({
                 )}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0">
                 {days.map((day) => {
                     const { dayTrainings, dayLeaves, userLeaves } =
                         getDayData(day);
@@ -148,24 +163,32 @@ export default function CalendarView({
                     const hasUserLeave = userLeaves.length > 0;
                     const isToday = isSameDay(day, new Date());
                     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    const inCurrentMonth = isCurrentMonth(day);
 
                     let bgColor = "bg-background";
                     let borderColor = "border-border";
-                    const textColor = "text-foreground";
+                    let textColor = "text-foreground";
 
-                    if (isWeekend) {
+                    // Dim days from previous/next months
+                    if (!inCurrentMonth) {
+                        textColor = "text-muted-foreground/50";
+                    }
+
+                    if (isWeekend && inCurrentMonth) {
                         bgColor = "bg-muted/30";
                     }
 
-                    if (hasTraining && hasLeave) {
-                        bgColor = "bg-warning/10";
-                        borderColor = "border-warning/30";
-                    } else if (hasTraining) {
-                        bgColor = "bg-primary/10";
-                        borderColor = "border-primary/30";
-                    } else if (hasLeave) {
-                        bgColor = "bg-destructive/10";
-                        borderColor = "border-destructive/30";
+                    if (inCurrentMonth) {
+                        if (hasTraining && hasLeave) {
+                            bgColor = "bg-warning/10";
+                            borderColor = "border-warning/30";
+                        } else if (hasTraining) {
+                            bgColor = "bg-primary/10";
+                            borderColor = "border-primary/30";
+                        } else if (hasLeave) {
+                            bgColor = "bg-destructive/10";
+                            borderColor = "border-destructive/30";
+                        }
                     }
 
                     if (isToday) {
@@ -175,7 +198,9 @@ export default function CalendarView({
                     return (
                         <div
                             key={day.toString()}
-                            className={`${bgColor} ${borderColor} ${textColor} border rounded-lg p-2 min-h-[100px] cursor-pointer hover:shadow-sm transition-all relative`}
+                            className={`${bgColor} ${borderColor} ${textColor} border rounded-xs p-2 min-h-[100px] cursor-pointer hover:shadow-sm transition-all relative ${
+                                !inCurrentMonth ? "opacity-50" : ""
+                            }`}
                             onClick={() => onDateSelect(day)}
                         >
                             <div className="flex justify-between items-start mb-1">
@@ -183,91 +208,109 @@ export default function CalendarView({
                                     className={`font-semibold ${
                                         isToday ? "text-blue-500" : ""
                                     } ${
-                                        isWeekend ? "text-muted-foreground" : ""
+                                        isWeekend && inCurrentMonth
+                                            ? "text-muted-foreground"
+                                            : ""
                                     }`}
                                 >
                                     {format(day, "d")}
                                 </span>
 
-                                <div className="flex flex-col gap-1 items-end">
-                                    {hasTraining && (
-                                        <Badge
-                                            variant="secondary"
-                                            className="bg-primary/20 text-primary-foreground text-xs px-2 py-0"
-                                        >
-                                            ⚔️ {dayTrainings.length}
-                                        </Badge>
-                                    )}
-                                    {hasLeave && (
-                                        <Badge
-                                            variant="secondary"
-                                            className="bg-destructive/20 text-destructive-foreground text-xs px-2 py-0"
-                                        >
-                                            👤 {dayLeaves.length}
-                                        </Badge>
-                                    )}
-                                    {hasUserLeave && (
-                                        <Badge className="bg-blue-500/20 text-blue-600 text-xs px-2 py-0">
-                                            YOU
-                                        </Badge>
-                                    )}
-                                </div>
+                                {inCurrentMonth && (
+                                    <div className="flex flex-col gap-1 items-end">
+                                        {hasTraining && (
+                                            <Badge
+                                                variant="secondary"
+                                                className="bg-primary/20 text-primary-foreground text-xs px-2 py-0"
+                                            >
+                                                ⚔️ {dayTrainings.length}
+                                            </Badge>
+                                        )}
+                                        {hasLeave && (
+                                            <Badge
+                                                variant="secondary"
+                                                className="bg-destructive/20 text-destructive-foreground text-xs px-2 py-0"
+                                            >
+                                                👤 {dayLeaves.length}
+                                            </Badge>
+                                        )}
+                                        {hasUserLeave && (
+                                            <Badge className="bg-blue-500/20 text-blue-600 text-xs px-2 py-0">
+                                                YOU
+                                            </Badge>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Training indicators */}
-                            {dayTrainings.slice(0, 1).map((training) => (
-                                <div
-                                    key={training.id}
-                                    className="text-xs text-primary truncate mb-1"
-                                >
-                                    ⚔️ {training.title}
-                                </div>
-                            ))}
+                            {/* Only show content for current month days */}
+                            {inCurrentMonth && (
+                                <>
+                                    {/* Training indicators */}
+                                    {dayTrainings
+                                        .slice(0, 1)
+                                        .map((training) => (
+                                            <div
+                                                key={training.id}
+                                                className="text-xs text-primary truncate mb-1"
+                                            >
+                                                ⚔️ {training.title}
+                                            </div>
+                                        ))}
 
-                            {/* Leave indicators */}
-                            {dayLeaves.slice(0, 1).map((leave) => {
-                                const isUserLeave = userLeaves.some(
-                                    (ul) => ul.id === leave.id
-                                );
-                                return (
-                                    <div
-                                        key={leave.id}
-                                        className={`text-xs truncate ${
-                                            isUserLeave
-                                                ? "font-medium text-blue-600"
-                                                : "text-destructive"
-                                        }`}
-                                    >
-                                        👤 {leave.user_name.split(" ")[0]}
-                                    </div>
-                                );
-                            })}
+                                    {/* Leave indicators */}
+                                    {dayLeaves.slice(0, 1).map((leave) => {
+                                        const isUserLeave = userLeaves.some(
+                                            (ul) => ul.id === leave.id
+                                        );
+                                        return (
+                                            <div
+                                                key={leave.id}
+                                                className={`text-xs truncate ${
+                                                    isUserLeave
+                                                        ? "font-medium text-blue-600"
+                                                        : "text-destructive"
+                                                }`}
+                                            >
+                                                👤{" "}
+                                                {leave.user_name.split(" ")[0]}
+                                            </div>
+                                        );
+                                    })}
 
-                            {/* Show more indicator */}
-                            {(dayTrainings.length > 1 ||
-                                dayLeaves.length > 1) && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                    +
-                                    {Math.max(0, dayTrainings.length - 1) +
-                                        Math.max(0, dayLeaves.length - 1)}{" "}
-                                    more
-                                </div>
-                            )}
+                                    {/* Show more indicator */}
+                                    {(dayTrainings.length > 1 ||
+                                        dayLeaves.length > 1) && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                            +
+                                            {Math.max(
+                                                0,
+                                                dayTrainings.length - 1
+                                            ) +
+                                                Math.max(
+                                                    0,
+                                                    dayLeaves.length - 1
+                                                )}{" "}
+                                            more
+                                        </div>
+                                    )}
 
-                            {/* Conflict warning */}
-                            {hasTraining && hasLeave && (
-                                <div className="absolute bottom-1 left-1">
-                                    <AlertTriangle className="h-3 w-3 text-warning" />
-                                </div>
-                            )}
+                                    {/* Conflict warning */}
+                                    {hasTraining && hasLeave && (
+                                        <div className="absolute bottom-1 left-1">
+                                            <AlertTriangle className="h-3 w-3 text-warning" />
+                                        </div>
+                                    )}
 
-                            {/* Weekend indicator */}
-                            {isWeekend && (
-                                <div className="absolute top-1 right-1">
-                                    <span className="text-xs text-muted-foreground">
-                                        🌴
-                                    </span>
-                                </div>
+                                    {/* Weekend indicator */}
+                                    {/* {isWeekend && (
+                                        <div className="absolute top-1 right-1">
+                                            <span className="text-xs text-muted-foreground">
+                                                🌴
+                                            </span>
+                                        </div>
+                                    )} */}
+                                </>
                             )}
                         </div>
                     );

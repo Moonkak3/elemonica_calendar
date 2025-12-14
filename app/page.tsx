@@ -114,35 +114,35 @@ export default function Home() {
         );
     }
 
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <div className="flex items-center justify-center mb-4">
-                            <Shield className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                        <CardTitle className="text-center">
-                            Telegram Required
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-center space-y-4">
-                            <p className="text-muted-foreground">{error}</p>
-                            <Badge variant="outline" className="mx-auto">
-                                <User className="h-3 w-3 mr-2" />
-                                Telegram Mini App
-                            </Badge>
-                            <p className="text-sm text-muted-foreground">
-                                This app only works when opened from the
-                                Telegram bot.
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
+    // if (error) {
+    //     return (
+    //         <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
+    //             <Card className="w-full max-w-md">
+    //                 <CardHeader>
+    //                     <div className="flex items-center justify-center mb-4">
+    //                         <Shield className="h-12 w-12 text-muted-foreground" />
+    //                     </div>
+    //                     <CardTitle className="text-center">
+    //                         Telegram Required
+    //                     </CardTitle>
+    //                 </CardHeader>
+    //                 <CardContent>
+    //                     <div className="text-center space-y-4">
+    //                         <p className="text-muted-foreground">{error}</p>
+    //                         <Badge variant="outline" className="mx-auto">
+    //                             <User className="h-3 w-3 mr-2" />
+    //                             Telegram Mini App
+    //                         </Badge>
+    //                         <p className="text-sm text-muted-foreground">
+    //                             This app only works when opened from the
+    //                             Telegram bot.
+    //                         </p>
+    //                     </div>
+    //                 </CardContent>
+    //             </Card>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted">
@@ -156,7 +156,7 @@ export default function Home() {
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold">
-                                    Training Calendar
+                                    MEC Calendar
                                 </h1>
                                 <p className="text-sm text-muted-foreground">
                                     {data?.userInfo?.name
@@ -188,7 +188,59 @@ export default function Home() {
                 </div>
             </header>
 
-            <main className="container mx-auto px-4 py-6">
+            <main className="container mx-auto px-0 py-6">
+                {/* Calendar View */}
+                <CalendarView
+                    trainings={data?.trainings || []}
+                    leaves={filteredLeaves}
+                    selectedDate={selectedDate}
+                    onDateSelect={setSelectedDate}
+                    userInfo={data?.userInfo}
+                />
+
+                {/* Legend */}
+                <div className="my-6 p-4 bg-muted rounded-lg border">
+                    <h3 className="font-medium mb-3 flex items-center">
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Color Legend
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-primary/10 border border-primary/30 rounded"></div>
+                            <span className="text-sm">Training Day</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-destructive/10 border border-destructive/30 rounded"></div>
+                            <span className="text-sm">Leave Day</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-warning/10 border border-warning/30 rounded"></div>
+                            <span className="text-sm">Conflict (Both)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-blue-500/10 border-2 border-blue-500/30 rounded"></div>
+                            <span className="text-sm">Today</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filters */}
+                <Card className="mb-6">
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center">
+                            <Filter className="h-5 w-5 mr-2" />
+                            Filter View
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Filters
+                            filters={filters}
+                            onFilterChange={setFilters}
+                            platforms={data?.platforms || []}
+                        />
+                    </CardContent>
+                </Card>
+
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <Card>
@@ -241,67 +293,6 @@ export default function Home() {
                             </p>
                         </CardContent>
                     </Card>
-                </div>
-
-                {/* Filters */}
-                <Card className="mb-6">
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center">
-                            <Filter className="h-5 w-5 mr-2" />
-                            Filter View
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Filters
-                            filters={filters}
-                            onFilterChange={setFilters}
-                            platforms={data?.platforms || []}
-                        />
-                    </CardContent>
-                </Card>
-
-                {/* Calendar View */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">
-                            Schedule Overview
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <CalendarView
-                            trainings={data?.trainings || []}
-                            leaves={filteredLeaves}
-                            selectedDate={selectedDate}
-                            onDateSelect={setSelectedDate}
-                            userInfo={data?.userInfo}
-                        />
-                    </CardContent>
-                </Card>
-
-                {/* Legend */}
-                <div className="mt-6 p-4 bg-muted rounded-lg border">
-                    <h3 className="font-medium mb-3 flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Color Legend
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-primary/10 border border-primary/30 rounded"></div>
-                            <span className="text-sm">Training Day</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-destructive/10 border border-destructive/30 rounded"></div>
-                            <span className="text-sm">Leave Day</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-warning/10 border border-warning/30 rounded"></div>
-                            <span className="text-sm">Conflict (Both)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-blue-500/10 border-2 border-blue-500/30 rounded"></div>
-                            <span className="text-sm">Today</span>
-                        </div>
-                    </div>
                 </div>
             </main>
 
